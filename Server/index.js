@@ -11,7 +11,6 @@ app.use(bodyParser.json());
 const fetch = require("node-fetch");
 
 
-
 //  Test function
 //  Test function using fetch
 async function chatWithGPT(message) {
@@ -29,7 +28,14 @@ async function chatWithGPT(message) {
     });
 
     const data = await response.json();
-    console.log("GPT:", data.choices[0].message.content);
+    console.log("OpenRouter response:", data);
+
+    if (!data.choices || !data.choices[0]) {
+      console.error("❌ Invalid or missing response from OpenRouter:", data);
+      return;
+    }
+
+    console.log("✅ GPT:", data.choices[0].message.content);
   } catch (error) {
     console.error("OpenRouter Error:", error.message);
   }
@@ -56,12 +62,22 @@ app.post("/api/chat", async (req, res) => {
     });
 
     const data = await response.json();
+    console.log("OpenRouter API Response:", data);
+
+    if (!data.choices || !data.choices[0]) {
+      return res.status(500).json({
+        reply: "⚠️ OpenRouter API returned an unexpected response. Please try again.",
+        raw: data,
+      });
+    }
+
     res.json({ reply: data.choices[0].message.content });
   } catch (err) {
     console.error("OpenRouter Error:", err.message);
-    res.status(500).send("Failed to get response");
+    res.status(500).json({ reply: "❌ Failed to connect to OpenRouter." });
   }
 });
+
 
 
 
@@ -79,6 +95,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
     console.log(` Server running at http://localhost:${PORT}`)
 );
-
 
 
